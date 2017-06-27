@@ -657,7 +657,7 @@ describe('ReactDOMServerIntegration', () => {
       });
 
       itRenders('a div with text sibling to a node', async render => {
-        const e = await render(<div>Text<span>More Text</span></div>);
+        const e = await render(<div>Text <span>More Text</span></div>);
         let spanNode;
         if (ReactDOMFeatureFlags.useFiber) {
           // with Fiber, there are only two children, the "Text" text node and
@@ -670,10 +670,26 @@ describe('ReactDOMServerIntegration', () => {
           expect(e.childNodes.length).toBe(4);
           spanNode = e.childNodes[3];
         }
-        expectTextNode(e.childNodes[0], 'Text');
+        expectTextNode(e.childNodes[0], 'Text ');
         expect(spanNode.tagName).toBe('SPAN');
         expect(spanNode.childNodes.length).toBe(1);
         expectNode(spanNode.firstChild, TEXT_NODE_TYPE, 'More Text');
+      });
+
+      itRenders('a div with mixed array children (text & node)', async render => {
+        const e = await render(<div>{['foo ', <span key="bar">bar</span>]}</div>);
+        let spanNode;
+        if (ReactDOMFeatureFlags.useFiber) {
+          expect(e.childNodes.length).toBe(2);
+          spanNode = e.childNodes[1];
+        } else {
+          expect(e.childNodes.length).toBe(4);
+          spanNode = e.childNodes[3];
+        }
+        expectTextNode(e.childNodes[0], 'foo ');
+        expect(spanNode.tagName).toBe('SPAN');
+        expect(spanNode.childNodes.length).toBe(1);
+        expectNode(spanNode.firstChild, TEXT_NODE_TYPE, 'bar');
       });
 
       itRenders('a non-standard element with text', async render => {
